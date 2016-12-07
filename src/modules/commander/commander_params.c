@@ -127,10 +127,11 @@ PARAM_DEFINE_INT32(COM_DL_REG_T, 0);
  * Engine failure triggers only above this throttle value
  *
  * @group Commander
+ * @unit norm
  * @min 0.0
  * @max 1.0
- * @decimal 1
- * @increment 0.05
+ * @decimal 2
+ * @increment 0.01
  */
 PARAM_DEFINE_FLOAT(COM_EF_THROT, 0.5f);
 
@@ -142,7 +143,7 @@ PARAM_DEFINE_FLOAT(COM_EF_THROT, 0.5f);
  * @group Commander
  * @min 0.0
  * @max 50.0
- * @unit A
+ * @unit A/%
  * @decimal 2
  * @increment 1
  */
@@ -235,10 +236,25 @@ PARAM_DEFINE_INT32(COM_AUTOS_PAR, 1);
 PARAM_DEFINE_INT32(COM_RC_IN_MODE, 0);
 
 /**
+ * RC input arm/disarm command duration
+ *
+ * The default value of 1000 requires the stick to be held in the arm or disarm position for 1 second.
+ *
+ * @group Commander
+ * @min 100
+ * @max 1500
+ */
+PARAM_DEFINE_INT32(COM_RC_ARM_HYST, 1000);
+
+/**
  * Time-out for auto disarm after landing
  *
  * A non-zero, positive value specifies the time-out period in seconds after which the vehicle will be
  * automatically disarmed in case a landing situation has been detected during this period.
+ *
+ * The vehicle will also auto-disarm right after arming if it has not even flown, however the time
+ * will be longer by a factor of 5.
+ *
  * A value of zero means that automatic disarming is disabled.
  *
  * @group Commander
@@ -249,6 +265,19 @@ PARAM_DEFINE_INT32(COM_RC_IN_MODE, 0);
  * @increment 1
  */
 PARAM_DEFINE_INT32(COM_DISARM_LAND, 0);
+
+/**
+ * Allow arming without GPS
+ *
+ * The default allows to arm the vehicle without GPS signal.
+ *
+ * @group Commander
+ * @min 0
+ * @max 1
+ * @value 0 Don't allow arming without GPS
+ * @value 1 Allow arming without GPS
+ */
+PARAM_DEFINE_INT32(COM_ARM_WO_GPS, 1);
 
 /**
  * Battery failsafe mode
@@ -263,6 +292,48 @@ PARAM_DEFINE_INT32(COM_DISARM_LAND, 0);
  * @increment 1
  */
 PARAM_DEFINE_INT32(COM_LOW_BAT_ACT, 0);
+
+/**
+ * Time-out to wait when offboard connection is lost before triggering offboard lost action.
+ * See COM_OBL_ACT and COM_OBL_RC_ACT to configure action.
+ *
+ * @group Commander
+ * @unit second
+ * @min 0
+ * @max 60
+ * @increment 1
+ */
+PARAM_DEFINE_FLOAT(COM_OF_LOSS_T, 0.0f);
+
+/**
+ * Set offboard loss failsafe mode
+ *
+ * The offboard loss failsafe will only be entered after a timeout,
+ * set by COM_OF_LOSS_T in seconds.
+ *
+ * @value 0 Land at current position
+ * @value 1 Loiter
+ * @value 2 Return to Land
+ *
+ * @group Mission
+ */
+PARAM_DEFINE_INT32(COM_OBL_ACT, 0);
+
+/**
+ * Set offboard loss failsafe mode when RC is available
+ *
+ * The offboard loss failsafe will only be entered after a timeout,
+ * set by COM_OF_LOSS_T in seconds.
+ *
+ * @value 0 Position control
+ * @value 1 Altitude control
+ * @value 2 Manual
+ * @value 3 Return to Land
+ * @value 4 Land at current position
+ *
+ * @group Mission
+ */
+PARAM_DEFINE_INT32(COM_OBL_RC_ACT, 0);
 
 /**
  * First flightmode slot (1000-1160)
@@ -357,7 +428,7 @@ PARAM_DEFINE_INT32(COM_FLTMODE3, -1);
 PARAM_DEFINE_INT32(COM_FLTMODE4, -1);
 
 /**
- * Fift flightmode slot (1640-1800)
+ * Fifth flightmode slot (1640-1800)
  *
  * If the main switch channel is in this range the
  * selected flight mode will be applied.
@@ -401,3 +472,99 @@ PARAM_DEFINE_INT32(COM_FLTMODE5, -1);
  * @value 12 Follow Me
  */
 PARAM_DEFINE_INT32(COM_FLTMODE6, -1);
+
+/**
+ * Maximum EKF position innovation test ratio that will allow arming
+ *
+ * @group Commander
+ * @unit m
+ * @min 0.1
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.05
+ */
+PARAM_DEFINE_FLOAT(COM_ARM_EKF_POS, 0.5f);
+
+/**
+ * Maximum EKF velocity innovation test ratio that will allow arming
+ *
+ * @group Commander
+ * @unit m/s
+ * @min 0.1
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.05
+ */
+PARAM_DEFINE_FLOAT(COM_ARM_EKF_VEL, 0.5f);
+
+/**
+ * Maximum EKF height innovation test ratio that will allow arming
+ *
+ * @group Commander
+ * @unit m
+ * @min 0.1
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.05
+ */
+PARAM_DEFINE_FLOAT(COM_ARM_EKF_HGT, 1.0f);
+
+/**
+ * Maximum EKF yaw innovation test ratio that will allow arming
+ *
+ * @group Commander
+ * @unit rad
+ * @min 0.1
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.05
+ */
+PARAM_DEFINE_FLOAT(COM_ARM_EKF_YAW, 0.5f);
+
+/**
+ * Maximum value of EKF accelerometer delta velocity bias estimate that will allow arming
+ *
+ * @group Commander
+ * @unit m/s
+ * @min 0.001
+ * @max 0.004
+ * @decimal 4
+ * @increment 0.0005
+ */
+PARAM_DEFINE_FLOAT(COM_ARM_EKF_AB, 2.0e-3f);
+
+/**
+ * Maximum value of EKF gyro delta angle bias estimate that will allow arming
+ *
+ * @group Commander
+ * @unit rad
+ * @min 0.0001
+ * @max 0.0007
+ * @decimal 5
+ * @increment 0.00005
+ */
+PARAM_DEFINE_FLOAT(COM_ARM_EKF_GB, 3.5e-4f);
+
+/**
+ * Maximum accelerometer inconsistency between IMU units that will allow arming
+ *
+ * @group Commander
+ * @unit m/s/s
+ * @min 0.1
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.05
+ */
+PARAM_DEFINE_FLOAT(COM_ARM_IMU_ACC, 0.7f);
+
+/**
+ * Maximum rate gyro inconsistency between IMU units that will allow arming
+ *
+ * @group Commander
+ * @unit rad/s
+ * @min 0.02
+ * @max 0.2
+ * @decimal 3
+ * @increment 0.01
+ */
+PARAM_DEFINE_FLOAT(COM_ARM_IMU_GYR, 0.09f);
